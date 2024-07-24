@@ -5,7 +5,8 @@ with lib;
 let
   # Should only be used with options that previously used floats defined as strings.
   inherit (config.lib.defaults.types) floatWithDeprecationError;
-in {
+in
+{
   options = {
 
     system.defaults.dock.appswitcher-all-displays = mkOption {
@@ -84,7 +85,13 @@ in {
     };
 
     system.defaults.dock.mineffect = mkOption {
-      type = types.nullOr (types.enum [ "genie" "suck" "scale" ]);
+      type = types.nullOr (
+        types.enum [
+          "genie"
+          "suck"
+          "scale"
+        ]
+      );
       default = null;
       description = ''
         Set the minimize/maximize window effect. The default is genie.
@@ -116,7 +123,13 @@ in {
     };
 
     system.defaults.dock.orientation = mkOption {
-      type = types.nullOr (types.enum [ "bottom" "left" "right" ]);
+      type = types.nullOr (
+        types.enum [
+          "bottom"
+          "left"
+          "right"
+        ]
+      );
       default = null;
       description = ''
         Position of the dock on screen.  The default is "bottom".
@@ -124,29 +137,82 @@ in {
     };
 
     system.defaults.dock.persistent-apps = mkOption {
-      type = types.nullOr (types.listOf (types.either types.path types.str));
+      type = types.nullOr (
+        types.listOf (
+          types.oneOf [
+            types.path
+            types.str
+            (types.attrsOf types.anything)
+          ]
+        )
+      );
       default = null;
-      example = [ "/Applications/Safari.app" "/System/Applications/Utilities/Terminal.app" ];
+      example = [
+        "/Applications/Safari.app"
+        "/System/Applications/Utilities/Terminal.app"
+      ];
       description = ''
         Persistent applications in the dock.
       '';
-      apply = value:
-        if !(isList value)
-        then value
-        else map (app: { tile-data = { file-data = { _CFURLString = app; _CFURLStringType = 0; }; }; }) value;
+      apply =
+        value:
+        if !(isList value) then
+          value
+        else
+          map (
+            app:
+            if isPath app || isString app then
+              {
+                tile-data = {
+                  file-data = {
+                    _CFURLString = app;
+                    _CFURLStringType = 0;
+                  };
+                };
+              }
+            else
+              app
+          ) value;
     };
 
     system.defaults.dock.persistent-others = mkOption {
-      type = types.nullOr (types.listOf (types.either types.path types.str));
+      type = types.nullOr (
+        types.listOf (
+          types.oneOf [
+            types.path
+            types.str
+            (types.attrsOf types.anything)
+          ]
+        )
+      );
       default = null;
-      example = [ "~/Documents" "~/Downloads" ];
+      example = [
+        "~/Documents"
+        "~/Downloads"
+      ];
       description = ''
         Persistent folders in the dock.
       '';
-      apply = value:
-        if !(isList value)
-        then value
-        else map (folder: { tile-data = { file-data = { _CFURLString = "file://" + folder; _CFURLStringType = 15; }; }; tile-type = if strings.hasInfix "." (last (splitString "/" folder)) then "file-tile" else "directory-tile"; }) value;
+      apply =
+        value:
+        if !(isList value) then
+          value
+        else
+          map (
+            folder:
+            if isPath folder || isString folder then
+              {
+                tile-data = {
+                  file-data = {
+                    _CFURLString = "file://" + folder;
+                    _CFURLStringType = 15;
+                  };
+                };
+                tile-type = if strings.hasInfix "." (last (splitString "/" folder)) then "file-tile" else "directory-tile";
+              }
+            else
+              value
+          ) value;
     };
 
     system.defaults.dock.show-process-indicators = mkOption {
@@ -204,7 +270,6 @@ in {
         Magnified icon size on hover. The default is 16.
       '';
     };
-   
 
     system.defaults.dock.wvous-tl-corner = mkOption {
       type = types.nullOr types.ints.positive;
@@ -290,5 +355,5 @@ in {
       '';
     };
 
-    };
+  };
 }
